@@ -1,0 +1,56 @@
+# Prueba de humo - FASE 1 (backend, ADR-004)
+# Entorno: API NestJS (node dist/main.js) + PostgreSQL 17 en Docker (contenedor ShopDB).
+# Los valores del JWT y del token CSRF se muestran abreviados.
+
+### 1. GET /api/seed (carga usuarios y productos; borra los anteriores)
+$ curl -s http://localhost:3000/api/seed
+SEED EXECUTED
+HTTP 200
+
+### 2. POST /api/auth/login como admin (test1@google.com) con cookie jar (-c)
+$ curl -i -c jar -X POST http://localhost:3000/api/auth/login -d '{"email":"test1@google.com","password":"***"}'
+HTTP/1.1 201 Created
+Set-Cookie: access_token=eyJhbGciOi...(JWT abreviado); Max-Age=7200; Path=/api; Expires=Wed, 04 Nov 2026 01:05:41 GMT; HttpOnly; SameSite=Lax
+Set-Cookie: csrf_token=eb5030f9...(token CSRF abreviado); Max-Age=7200; Path=/; Expires=Wed, 04 Nov 2026 01:05:41 GMT; SameSite=Lax
+cuerpo:
+{"user":{"id":"f625f6e7-a316-4221-b67d-9138cd20c172","email":"test1@google.com","fullName":"Test One","isActive":true,"roles":["admin"]}}
+claves del cuerpo (solo debe ser 'user'): user
+
+### 3. GET /api/auth/check-status con la cookie (-b) -> 200 y renueva cookies
+HTTP/1.1 200 OK
+Set-Cookie: access_token=eyJhbGciOi...(JWT abreviado); Max-Age=7200; Path=/api; Expires=Wed, 04 Nov 2026 01:05:42 GMT; HttpOnly; SameSite=Lax
+Set-Cookie: csrf_token=56d532f9...(token CSRF abreviado); Max-Age=7200; Path=/; Expires=Wed, 04 Nov 2026 01:05:42 GMT; SameSite=Lax
+cuerpo:
+{"user":{"id":"f625f6e7-a316-4221-b67d-9138cd20c172","email":"test1@google.com","fullName":"Test One","isActive":true,"roles":["admin"]}}
+
+### 4. POST /api/products SIN X-CSRF-Token (con cookies) -> 403
+$ curl -b jar -X POST http://localhost:3000/api/products -d '{...}'
+{"message":"Invalid or missing CSRF token","error":"Forbidden","statusCode":403}
+HTTP 403
+
+### 5. POST /api/products CON X-CSRF-Token (admin) -> 201
+$ curl -b jar -H 'X-CSRF-Token: 56d532f9...(token CSRF abreviado)' -X POST http://localhost:3000/api/products -d '{...}'
+HTTP 201
+producto creado: {"id":"f86ae230...","title":"Producto de humo","slug":"producto_de_humo"}
+
+### 6. DELETE del producto de humo con CSRF (limpieza) -> 200
+HTTP 200
+
+### 7. POST /api/auth/logout con CSRF -> 200 { ok: true } y cookies expiradas
+HTTP/1.1 200 OK
+Set-Cookie: access_token=; Path=/api; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+Set-Cookie: csrf_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax
+cuerpo:
+{"ok":true}
+
+### 8. GET /api/auth/check-status DESPUES del logout (el cliente ya no tiene cookies) -> 401
+{"message":"Unauthorized","statusCode":401}
+HTTP 401
+
+### 9. Comprobacion extra: el JWT en la cabecera Authorization ya no autentica -> 401
+{"message":"Unauthorized","statusCode":401}
+HTTP 401
+
+### 10. Observacion: repetir la cookie ANTIGUA tras el logout
+(el JWT es sin estado: sigue valido hasta su expiracion; no hay lista de revocacion)
+HTTP 200
