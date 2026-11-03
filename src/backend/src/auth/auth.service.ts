@@ -4,29 +4,24 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 
+import { CreateUserDto, LoginUserDto, UserResponseDto } from './dto';
 import { User } from './entities/user.entity';
-import {
-  AuthResponseDto,
-  CreateUserDto,
-  LoginUserDto,
-  UserResponseDto,
-} from './dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { AuthSession } from './interfaces';
+import { TokenService } from './services/token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
+  async create(createUserDto: CreateUserDto): Promise<AuthSession> {
     try {
       const { password, ...userData } = createUserDto;
 
@@ -37,13 +32,13 @@ export class AuthService {
 
       await this.userRepository.save(user);
 
-      return this.buildAuthResponse(user);
+      return this.buildSession(user);
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<AuthResponseDto> {
+  async login(loginUserDto: LoginUserDto): Promise<AuthSession> {
     const { password, email } = loginUserDto;
 
     const user = await this.userRepository.findOne({
@@ -64,29 +59,24 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password!))
       throw new UnauthorizedException('Credentials are not valid (password)');
 
-    return this.buildAuthResponse(user);
+    return this.buildSession(user);
   }
 
-  checkAuthStatus(user: User): AuthResponseDto {
-    return this.buildAuthResponse(user);
+  checkAuthStatus(user: User): AuthSession {
+    return this.buildSession(user);
   }
 
   /**
-   * Único punto donde se arma la respuesta de autenticación (ADR-001).
-   * La exclusión de campos sensibles (p. ej. `password`) es declarativa: la
-   * define UserResponseDto mediante @Expose(), no una línea `delete` en cada
-   * método.
+   * Único punto donde se arma la sesión (ADR-001 y ADR-004). La exclusión de
+   * campos sensibles (p. ej. `password`) es declarativa: la define
+   * UserResponseDto mediante @Expose(). El JWT no va en la respuesta: el
+   * controlador lo entrega en una cookie httpOnly.
    */
-  private buildAuthResponse(user: User): AuthResponseDto {
+  private buildSession(user: User): AuthSession {
     return {
       user: UserResponseDto.fromEntity(user),
-      token: this.getJwtToken({ id: user.id }),
+      accessToken: this.tokenService.signAccessToken(user.id),
     };
-  }
-
-  private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-    return token;
   }
 
   private handleDBErrors(error: any): never {

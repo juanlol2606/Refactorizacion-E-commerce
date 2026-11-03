@@ -9,7 +9,7 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -35,7 +35,6 @@ export class ProductsController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
-  @ApiBearerAuth()
   create(@Body() createProductDto: CreateProductDto, @GetUser() user: User) {
     return this.productsService.create(createProductDto, user);
   }
@@ -66,7 +65,6 @@ export class ProductsController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
-  @ApiBearerAuth()
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -79,7 +77,6 @@ export class ProductsController {
   @Delete(':id')
   @ApiResponse({ status: 200, description: 'Product deleted' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  @ApiBearerAuth()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id);
   }

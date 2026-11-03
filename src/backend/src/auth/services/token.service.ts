@@ -15,6 +15,16 @@ import { JwtPayload } from '../interfaces';
 const MIN_CSRF_SECRET_LENGTH = 16;
 const HEX = /^[0-9a-f]+$/i;
 
+/** Extrae el JWT de la cookie httpOnly `access_token` (requiere cookie-parser). */
+export const extractAccessTokenFromRequest = (
+  req: Pick<Request, 'cookies'>,
+): string | null => {
+  const cookies = req?.cookies as Record<string, unknown> | undefined;
+  const token = cookies?.[ACCESS_TOKEN_COOKIE];
+
+  return typeof token === 'string' && token.length > 0 ? token : null;
+};
+
 /**
  * Centraliza todo lo relativo al token de sesión (ADR-004): firma y verificación
  * del JWT, lectura desde la cookie, emisión y borrado de las cookies de sesión
@@ -52,10 +62,7 @@ export class TokenService {
   }
 
   getAccessTokenFromRequest(req: Pick<Request, 'cookies'>): string | null {
-    const token = (req?.cookies as Record<string, unknown> | undefined)?.[
-      ACCESS_TOKEN_COOKIE
-    ];
-    return typeof token === 'string' && token.length > 0 ? token : null;
+    return extractAccessTokenFromRequest(req);
   }
 
   /** Lee el JWT de una cabecera `Cookie` cruda (handshake de WebSocket). */
