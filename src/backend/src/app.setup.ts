@@ -8,22 +8,27 @@ import {
   API_PREFIX,
   DEFAULT_FRONTEND_URL,
 } from './auth/auth.constants';
+import { CookieIoAdapter } from './message-ws/cookie-io.adapter';
 
 /**
  * Configuración HTTP global (ADR-004): prefijo /api, cookie-parser, CORS con
- * credenciales solo para FRONTEND_URL y validación de entrada. La comparten
- * main.ts y las pruebas, de modo que se prueba lo mismo que se ejecuta.
+ * credenciales solo para FRONTEND_URL (HTTP y WebSocket) y validación de
+ * entrada. La comparten main.ts y las pruebas, de modo que se prueba lo mismo
+ * que se ejecuta.
  */
 export function setupApp(app: INestApplication): void {
   const config = app.get(ConfigService);
+  const frontendUrl =
+    config.get<string>('FRONTEND_URL') || DEFAULT_FRONTEND_URL;
 
   app.setGlobalPrefix(API_PREFIX);
   app.use(cookieParser());
   app.enableCors({
-    origin: config.get<string>('FRONTEND_URL') || DEFAULT_FRONTEND_URL,
+    origin: frontendUrl,
     credentials: true,
     allowedHeaders: ['Content-Type', 'Accept', 'X-CSRF-Token'],
   });
+  app.useWebSocketAdapter(new CookieIoAdapter(app, frontendUrl));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
