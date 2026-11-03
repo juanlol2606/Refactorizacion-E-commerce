@@ -26,7 +26,8 @@ export class SeedService {
     await this.productsService.deleteAllProducts();
 
     const queryBuilder = this.userRepository.createQueryBuilder();
-    await queryBuilder.delete().where({}).execute();
+    // Sin where: TypeORM 0.3.31 rechaza criterios vacíos; así se borran todas las filas a propósito.
+    await queryBuilder.delete().execute();
   }
 
   private async insertUsers() {

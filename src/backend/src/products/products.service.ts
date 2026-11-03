@@ -205,7 +205,8 @@ export class ProductsService {
     const query = this.productRepository.createQueryBuilder('product');
 
     try {
-      return await query.delete().where({}).execute();
+      // Sin where: TypeORM 0.3.31 rechaza criterios vacíos; así se borran todas las filas a propósito.
+      return await query.delete().execute();
     } catch (error) {
       this.handleDBExceptions(error);
     }
