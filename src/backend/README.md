@@ -8,7 +8,7 @@ A RESTful API for managing products, users, authentication, file uploads, and re
 
 ## Features
 
-- User registration and authentication (JWT)
+- User registration and authentication: JWT in an `httpOnly` cookie with CSRF protection (ADR-004)
 - Role-based access control (admin, super-user, user)
 - Product CRUD with pagination and filtering
 - File upload and static file serving
@@ -64,20 +64,30 @@ A RESTful API for managing products, users, authentication, file uploads, and re
 
 ## Environment Variables
 
-See `.env.template` for all required variables:
+Copy `.env.template` to `.env` and complete it:
 
-```
-APP_VERSION=
-STAGE=
-DB_PASSWORD=
-DB_NAME=
-DB_HOST=
-DB_PORT=
-DB_USERNAME=
-PORT=
-HOST_API=
-JWT_SECRET=
-```
+| Variable | Description |
+|---|---|
+| `APP_VERSION`, `STAGE` | Version label and stage (`dev` or `prod`) |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL connection. Use `DB_HOST=localhost` when the API runs outside Docker |
+| `PORT`, `HOST_API` | API port and public URL |
+| `JWT_SECRET` | Secret used to sign the JWT |
+| `JWT_EXPIRES_IN` | JWT and session cookie lifetime (default `2h`) |
+| `CSRF_SECRET` | **Required**, at least 16 characters. Secret of the CSRF token. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `FRONTEND_URL` | Frontend origin allowed by CORS (HTTP and WebSocket), with credentials (default `http://localhost:5173`) |
+| `COOKIE_SECURE` | `true` only in production over HTTPS (marks the cookies as `Secure`) |
+
+## Authentication: httpOnly cookie + CSRF
+
+The JWT never travels in a response body or in `localStorage`:
+
+- `register`, `login` and `check-status` set two cookies and answer only `{ "user": { ... } }`.
+  - `access_token`: the JWT. `HttpOnly`, `SameSite=Lax`, `Path=/api`, `Max-Age` equal to `JWT_EXPIRES_IN`.
+  - `csrf_token`: `nonce.HMAC_SHA256(CSRF_SECRET, nonce + userId)`. Readable by JavaScript (`Path=/`).
+- `POST`, `PUT`, `PATCH` and `DELETE` on authenticated routes require the header `X-CSRF-Token` with the value of the `csrf_token` cookie. Without it (or if it was tampered with) the API answers `403`.
+- `POST /api/auth/logout` (authenticated + CSRF) expires both cookies and answers `{ "ok": true }`.
+- Clients must send credentials (`withCredentials: true` in Axios, `credentials: 'include'` in `fetch`).
+- WebSocket: Socket.IO listens on `/api/socket.io` and authenticates with the `access_token` cookie of the handshake.
 
 ## Docker Usage
 
