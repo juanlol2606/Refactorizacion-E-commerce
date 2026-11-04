@@ -14,6 +14,13 @@ import { User } from './entities/user.entity';
 import { AuthSession } from './interfaces';
 import { TokenService } from './services/token.service';
 
+// Mismo mensaje para correo inexistente y contraseña incorrecta: no permite
+// descubrir qué correos están registrados.
+const INVALID_CREDENTIALS = 'Credentials are not valid';
+// Hash ficticio: con correo inexistente también se ejecuta bcrypt, de modo que
+// el tiempo de respuesta tampoco delata si el correo existe.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('contrasena-ficticia', 10);
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -53,11 +60,13 @@ export class AuthService {
       },
     });
 
-    if (!user)
-      throw new UnauthorizedException('Credentials are not valid (email)');
+    if (!user) {
+      bcrypt.compareSync(password, DUMMY_PASSWORD_HASH);
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
 
     if (!bcrypt.compareSync(password, user.password!))
-      throw new UnauthorizedException('Credentials are not valid (password)');
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
 
     return this.buildSession(user);
   }

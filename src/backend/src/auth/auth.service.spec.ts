@@ -206,6 +206,36 @@ describe('AuthService', () => {
       expect(tokenService.signAccessToken).not.toHaveBeenCalled();
     });
 
+    it('el correo inexistente y la contraseña incorrecta responden con el MISMO mensaje 401', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+      const unknownEmail = (await service
+        .login({ email: 'nadie@google.com', password: PLAIN_PASSWORD })
+        .catch((e: unknown) => e)) as UnauthorizedException;
+
+      userRepository.findOne.mockResolvedValueOnce(buildUser());
+      const wrongPassword = (await service
+        .login({ email: 'test1@google.com', password: 'Incorrecta1' })
+        .catch((e: unknown) => e)) as UnauthorizedException;
+
+      expect(unknownEmail).toBeInstanceOf(UnauthorizedException);
+      expect(wrongPassword).toBeInstanceOf(UnauthorizedException);
+      expect(unknownEmail.message).toBe('Credentials are not valid');
+      expect(wrongPassword.message).toBe(unknownEmail.message);
+      expect(unknownEmail.message).not.toMatch(/email|password/i);
+    });
+
+    it('con correo inexistente también ejecuta bcrypt (el tiempo no delata si existe)', async () => {
+      const compare = jest.spyOn(bcrypt, 'compareSync');
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.login({ email: 'nadie@google.com', password: PLAIN_PASSWORD }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(compare).toHaveBeenCalledTimes(1);
+      compare.mockRestore();
+    });
+
     it('con contraseña incorrecta responde 401 y no firma ningún token', async () => {
       userRepository.findOne.mockResolvedValue(buildUser());
 

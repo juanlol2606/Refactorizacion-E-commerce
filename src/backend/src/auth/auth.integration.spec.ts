@@ -364,6 +364,20 @@ describe('Auth (integración HTTP: cookie + CSRF + Guards + Passport + JWT)', ()
       expect(setCookies(res)).toHaveLength(0);
     });
 
+    it('401: correo inexistente y contraseña incorrecta devuelven el mismo cuerpo', async () => {
+      const unknownEmail = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'nadie@google.com', password: PLAIN_PASSWORD })
+        .expect(401);
+      const wrongPassword = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'usuario@google.com', password: 'Incorrecta1' })
+        .expect(401);
+
+      expect(unknownEmail.body).toEqual(wrongPassword.body);
+      expect(JSON.stringify(unknownEmail.body)).not.toMatch(/email|password/i);
+    });
+
     it('400: cuerpo mal formado (correo inválido)', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
