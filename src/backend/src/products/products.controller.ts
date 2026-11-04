@@ -14,6 +14,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductsResponseDto } from './dto/products-response.dto';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 
 import { Auth, GetUser } from '../auth/decorators';
@@ -34,7 +35,8 @@ export class ProductsController {
     type: Product,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Missing or invalid CSRF token' })
   create(@Body() createProductDto: CreateProductDto, @GetUser() user: User) {
     return this.productsService.create(createProductDto, user);
   }
@@ -42,8 +44,8 @@ export class ProductsController {
   @Get()
   @ApiResponse({
     status: 200,
-    description: 'Got all products',
-    type: [Product],
+    description: 'A page of the catalog',
+    type: ProductsResponseDto,
   })
   findAll(@Query() paginationDto: PaginationDto) {
     return this.productsService.findAll(paginationDto);
@@ -59,12 +61,17 @@ export class ProductsController {
   @Patch(':id')
   @Auth(ValidRoles.admin)
   @ApiResponse({
-    status: 201,
+    status: 200,
     description: 'Product was updated',
     type: Product,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'The user is not an admin or the CSRF token is missing',
+  })
+  @ApiResponse({ status: 404, description: 'Not found' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -76,6 +83,11 @@ export class ProductsController {
   @Auth(ValidRoles.admin)
   @Delete(':id')
   @ApiResponse({ status: 200, description: 'Product deleted' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'The user is not an admin or the CSRF token is missing',
+  })
   @ApiResponse({ status: 404, description: 'Not found' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.remove(id);

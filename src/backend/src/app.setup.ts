@@ -40,8 +40,13 @@ export function setupApp(app: INestApplication): void {
 /** Swagger en /api. La sesión es la cookie `access_token`; las mutaciones llevan X-CSRF-Token. */
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('Teslo RESTul API')
-    .setDescription('Teslo shop endpoints')
+    .setTitle('Teslo RESTful API')
+    .setDescription(
+      'Teslo shop endpoints. The session is the httpOnly cookie `access_token`, set by register, login and check-status. ' +
+        'POST, PUT, PATCH and DELETE on authenticated routes must also send the header `X-CSRF-Token` with the value of the ' +
+        '`csrf_token` cookie (use the Authorize button). Sign in with `POST /api/auth/login` and keep using this page: ' +
+        'the browser sends the cookie automatically.',
+    )
     .setVersion('1.0')
     .addCookieAuth(ACCESS_TOKEN_COOKIE, undefined, ACCESS_TOKEN_COOKIE)
     .addApiKey({ type: 'apiKey', in: 'header', name: 'X-CSRF-Token' }, 'csrf')
