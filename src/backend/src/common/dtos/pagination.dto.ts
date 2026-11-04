@@ -69,4 +69,3 @@ export class PaginationDto {
   @Type(() => String)
   q?: string;
 }
-

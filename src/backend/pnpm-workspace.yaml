@@ -6,3 +6,8 @@ overrides:
   tar: ^7.5.22
   multer: ^2.5.0
   file-type: ^21.3.2
+  proxy-addr: ^2.0.8
+  body-parser: ^2.4.0
+  qs: ^6.16.1
+  fast-uri: ^3.1.9
+  'js-yaml@^5.0.0': ^5.4.1
