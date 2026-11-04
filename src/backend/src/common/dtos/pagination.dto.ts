@@ -13,7 +13,7 @@ export class PaginationDto {
   limit?: number;
 
   @ApiProperty({
-    default: 5,
+    default: 0,
     description: 'How many rows do you want to skip',
   })
   @IsOptional()
