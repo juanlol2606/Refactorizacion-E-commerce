@@ -1,0 +1,120 @@
+# Validación final - Semana 15 (rama refactor/semana-15)
+
+Entorno: clon limpio de la rama en una carpeta temporal (commit c4f7e36), sin node_modules,
+dist ni .env. Se siguieron los pasos del README raíz. Los secretos (JWT_SECRET, CSRF_SECRET y
+contraseñas) se generaron al azar y no se muestran; el JWT y el token CSRF aparecen abreviados.
+
+Diferencias con los valores por defecto del README, solo por convivir con servidores ya
+abiertos en el equipo:
+  - DB_NAME=ShopDBClean y COMPOSE_PROJECT_NAME=cleanclone (ya existía un contenedor ShopDB).
+  - Frontend en el puerto 5174 (el 5173 estaba ocupado) con FRONTEND_URL=http://localhost:5174.
+  - corepack enable --install-directory <carpeta temporal> en lugar de la instalación global.
+
+## 1. Clonado e instalación
+$ git clone --branch refactor/semana-15 https://github.com/juanlol2606/Refactorizacion-E-commerce.git
+$ corepack enable            # descarga pnpm@11.21.0, la versión de "packageManager"
+$ cd src/backend && cp .env.template .env      # STAGE=dev, DB_HOST=localhost, secretos aleatorios
+$ docker compose up -d db
+ Container ShopDBClean Started
+ PostgreSQL 17 listo (pg_isready)
+$ pnpm install                                  # Done, sin errores de builds ignorados
+$ pnpm run start:dev
+ API lista: GET /api/auth/check-status sin sesión -> 401
+
+## 2. Seed y Swagger
+$ curl http://localhost:3000/api/seed
+SEED EXECUTED   (HTTP 200)
+ productos cargados: 52 · usuarios: test1@google.com (admin) y test2@google.com
+$ curl -I http://localhost:3000/api
+ GET /api -> HTTP 200 text/html (Swagger)
+ Documento OpenAPI: título "Teslo RESTful API"; esquemas de seguridad: cookie access_token y
+ cabecera X-CSRF-Token; 12 rutas con sus códigos de respuesta; DTOs documentados.
+
+## 3. Frontend
+$ cd src/frontend && cp .env.template .env      # VITE_API_URL=http://localhost:3000/api
+$ pnpm install
+$ pnpm dev --port 5174
+ VITE v8.3.0 ready · GET http://localhost:5174 -> HTTP 200
+
+## 4. Pruebas, lint y build (clon limpio)
+
+## Backend: pnpm run build
+$ nest build
+
+## Backend: pnpm test
+PASS src/auth/services/token.service.spec.ts
+PASS src/auth/guards/csrf.guard.spec.ts
+PASS src/auth/guards/user-role.guard.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/seed/seed.service.spec.ts
+PASS src/seed/seed.controller.spec.ts
+PASS src/auth/strategies/jwt.strategy.spec.ts
+PASS src/message-ws/message-ws.gateway.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/message-ws/message-ws.integration.spec.ts
+PASS src/files/files.controller.spec.ts
+PASS src/auth/auth.integration.spec.ts
+Test Suites: 12 passed, 12 total
+Tests:       165 passed, 165 total
+
+## Backend: pnpm run test:cov:auth (umbral 70 %)
+All files                     |   92.33 |    87.03 |   86.79 |   92.99 |                   
+  auth.controller.ts          |     100 |      100 |     100 |     100 |                   
+  auth.service.ts             |     100 |      100 |     100 |     100 |                   
+  csrf.guard.ts               |     100 |      100 |     100 |     100 |                   
+  token.service.ts            |   98.52 |       90 |     100 |     100 | 74,82,168         
+Tests:       165 passed, 165 total
+exit: 0
+
+## Backend: pnpm run test:e2e (PostgreSQL real)
+    √ 1. registro: 201, cookies de sesión y respuesta solo con { user }
+    √ 2. registro duplicado: 400
+    √ 3. login con contraseña incorrecta: 401 y mismo mensaje que con un correo inexistente
+    √ 4. login: 201 y nuevas cookies de sesión
+    √ 5. check-status con la cookie: 200 y renueva la sesión
+    √ 6. ruta protegida por rol: un usuario "user" recibe 403 aunque envíe el CSRF
+    √ 7. al convertirse en admin (rol cambiado en la base) accede a la ruta de admin
+    √ 8. logout: sin CSRF 403; con CSRF 200 { ok: true } y cookies expiradas
+    √ 9. check-status después del logout: 401
+    √ 10. el catálogo público no expone al propietario de los productos
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+
+## Frontend: pnpm test
+ Test Files  3 passed (3)
+      Tests  39 passed (39)
+
+## Frontend: pnpm lint
+✖ 1 problem (0 errors, 1 warning)
+exit: 0
+
+## Frontend: pnpm build
+✓ built in 1.06s
+exit: 0
+
+## 5. Flujo en el navegador (http://localhost:5174 contra la API en :3000)
+Secuencia de peticiones a la API registrada por el navegador:
+ POST /api/auth/register            -> 201   (usuario nuevo, rol user; botón Admin ausente)
+ POST /api/auth/logout              -> 200   (botones vuelven a "Login"; cookies expiradas)
+ GET  /api/auth/check-status        -> 401   (sin sesión)
+ POST /api/auth/login               -> 201   (test1@google.com; aparece el botón Admin)
+ GET  /api/products?limit=9         -> 200   (catálogo con imágenes: GET /api/files/product/... -> 200)
+ GET  /api/auth/check-status        -> 200   (tras recargar /admin/products la sesión persiste por cookie)
+ POST /api/files/product            -> 201   (subida de una imagen PNG como admin, con X-CSRF-Token)
+ POST /api/products                 -> 201   (producto "Producto de validacion final", con X-CSRF-Token)
+ GET  /api/files/product/<id>.png   -> 200   (imagen recién subida)
+ POST /api/auth/logout              -> 200
+ GET  /api/auth/check-status        -> 401
+
+Comprobaciones en el navegador:
+ - document.cookie solo muestra csrf_token; access_token no es legible desde JavaScript (HttpOnly).
+ - localStorage queda vacío (Object.keys(localStorage) -> []) durante todo el recorrido.
+ - Producto guardado (GET /api/products/producto-de-validacion-final):
+   {"id":"840301a1…","title":"Producto de validacion final","price":60,"stock":4,"sizes":["L"],
+    "gender":"unisex","images":["8ee4f342…png"],"tieneUser":false}
+   (la API ya no devuelve el propietario del producto).
+ - Tras el logout, check-status responde 401 y los botones vuelven a "Login".
+
+## 6. Limpieza
+ - docker compose down -v solo del proyecto cleanclone (contenedor ShopDBClean y su volumen).
+ - Se restauró el contenedor ShopDB original sobre su volumen de datos, que no se tocó.
