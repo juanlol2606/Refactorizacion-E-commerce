@@ -12,6 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+import { Auth } from '../auth/decorators';
+import { ValidRoles } from '../auth/interfaces';
 import { FilesService } from './files.service';
 import { diskStorage } from 'multer';
 import { fileNamer, fileFilter } from './helpers';
@@ -30,7 +32,6 @@ export class FilesController {
     status: 200,
     description: 'File was found',
   })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
   @ApiResponse({
     status: 404,
     description: 'Not found',
@@ -39,18 +40,24 @@ export class FilesController {
     @Res() res: Response,
     @Param('imageName') imageName: string,
   ) {
-    const { root, fileName } = this.filesService.getStaticProductImage(imageName);
+    const { root, fileName } =
+      this.filesService.getStaticProductImage(imageName);
 
     res.sendFile(fileName, { root });
   }
 
   @Post('product')
+  @Auth(ValidRoles.admin)
   @ApiResponse({
     status: 201,
     description: 'Image was uploaded',
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 403, description: 'Forbidden. Token related' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'The user is not an admin or the CSRF token is missing',
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: fileFilter,
