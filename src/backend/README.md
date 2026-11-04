@@ -70,6 +70,7 @@ Copy `.env.template` to `.env` and complete it:
 |---|---|
 | `APP_VERSION`, `STAGE` | Version label and stage (`dev` or `prod`) |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL connection. Use `DB_HOST=localhost` when the API runs outside Docker |
+| `DB_SSL` | Optional. `true` or `false` forces SSL to PostgreSQL on or off; empty means SSL only when `STAGE=prod` (managed databases). `docker-compose.prod.yml` sets it to `false` by default because its bundled PostgreSQL has no SSL |
 | `PORT`, `HOST_API` | API port and public URL |
 | `JWT_SECRET` | Secret used to sign the JWT |
 | `JWT_EXPIRES_IN` | JWT and session cookie lifetime (default `2h`) |
@@ -112,5 +113,11 @@ docker compose -f docker-compose.prod.yml up -d
 ```
 
 This will build the production image and start both the app and the database containers.
+
+- The image includes `static/`, so the seed images are served from `/app/static/products`.
+- `DB_SSL` defaults to `false` in this compose file (the bundled PostgreSQL has no SSL). Set `DB_SSL=true` in `.env` if `DB_HOST` points to a managed database that requires SSL.
+- `GET /api/seed` answers `403` with `STAGE=prod`, so the database starts empty: register a user and promote it to `admin` in the database.
+- Images uploaded in production are stored inside the container (`/app/static/products`) and are lost if it is recreated. Mount a volume on that path to keep them.
+- Both compose files use fixed container names (`shop-app` and `${DB_NAME}`) and port `5432`, so they cannot run side by side nor next to another PostgreSQL on the same host.
 
 ---

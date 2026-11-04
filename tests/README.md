@@ -54,6 +54,7 @@ Evidencia (salidas reales):
 - [`resultados/cobertura-auth.txt`](resultados/cobertura-auth.txt) — cobertura del módulo Auth.
 - [`resultados/fase1-humo.txt`](resultados/fase1-humo.txt) — prueba de humo con `curl` (seed, login, CSRF, logout).
 - [`resultados/semana15-validacion.txt`](resultados/semana15-validacion.txt) — validación final desde un clon limpio, con el recorrido en el navegador.
+- [`resultados/semana15-docker-y-dependencias.txt`](resultados/semana15-docker-y-dependencias.txt) — `pnpm audit` antes y después, imagen de producción y compose de desarrollo con el API en contenedor.
 
 ## Pendiente
 

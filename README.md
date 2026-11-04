@@ -213,6 +213,8 @@ const socket = io('http://localhost:3000', {
 - **ADR-002, exclusión declarativa de `password`:** DTOs de respuesta con lista blanca.
 - **ADR-003, retiro de las rutas `private*`.**
 - **ADR-004, JWT en cookie `httpOnly` con CSRF:** `TokenService`, `CsrfGuard`, `POST /auth/logout`, CORS con credenciales y WebSocket autenticado por cookie.
+- **Docker verificado:** la imagen de producción ya copia `static/` (las imágenes de productos se sirven desde el contenedor) y se probó junto con el `docker-compose.yml` de desarrollo con el API dentro de un contenedor. Nueva variable opcional `DB_SSL` (vacía = SSL solo con `STAGE=prod`): el PostgreSQL de `docker-compose.prod.yml` no trae SSL y sin ella el API de producción no arrancaba; ese compose la fija en `false`.
+- **Dependencias:** `pnpm update` dentro de los rangos y overrides de la misma versión mayor en el Backend. `pnpm audit` bajó de 24 a 3 avisos en el Backend y de 43 a 3 en el Frontend; `pnpm audit --prod` del Frontend no encuentra vulnerabilidades.
 - **Endurecimientos:** subida de archivos solo para `admin`; `GET /seed` bloqueado con `STAGE=prod`; Products ya no devuelve al propietario (`user`); mensaje `401` uniforme en `login`; el rol `super` de la semilla es ahora `super-user`.
 
 **Pendiente y limitaciones conocidas:**
@@ -220,8 +222,9 @@ const socket = io('http://localhost:3000', {
 - El JWT no se puede revocar: `logout` expira las cookies en el navegador, pero un JWT ya copiado sigue siendo válido hasta que vence (2 h por defecto). No hay lista de revocación.
 - `POST /api/products` solo exige sesión, no rol `admin` (`PATCH` y `DELETE` sí lo exigen).
 - TypeORM corre con `synchronize: true`, incluso con `STAGE=prod`; en producción conviene usar migraciones.
-- El `Dockerfile` de producción no copia `static/`, así que las imágenes de productos no estarían en esa imagen.
-- Quedan pendientes las pruebas e2e del Frontend y revisar los avisos de `pnpm audit` publicados recientemente en dependencias.
+- Las imágenes que se suben en producción se guardan en el sistema de archivos del contenedor (`/app/static/products`) y se pierden si se recrea; para conservarlas hay que montar un volumen en esa ruta.
+- Avisos de `pnpm audit` sin corrección compatible: `deepmerge` (bajo, no existe versión parcheada), `glob` y `minimatch` (moderados; exigen glob 14 y minimatch 11, y ni TypeORM ni `@nestjs/cli` los usan todavía). En el Backend solo `glob` y `minimatch` están en producción, a través de TypeORM, y se aplican a patrones de nuestra configuración, no a entrada de usuarios. En el Frontend los 3 avisos (`zod`, `deepmerge`, `minimatch`) vienen de la CLI de `shadcn` y de `typescript-eslint`, solo de desarrollo.
+- Quedan pendientes las pruebas e2e del Frontend.
 
 El detalle por capas está en [`src/README.md`](src/README.md) y el de las pruebas en [`tests/README.md`](tests/README.md).
 
