@@ -11,7 +11,8 @@ export interface Product {
   gender: Gender;
   tags: string[];
   images: string[];
-  user: User;
+  // La API ya no devuelve el propietario del producto en sus respuestas.
+  user?: User;
 }
 
 export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';

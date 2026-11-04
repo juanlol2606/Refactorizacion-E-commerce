@@ -50,7 +50,7 @@ export class ProductsService {
 
       await this.productRepository.save(product);
 
-      return { ...product, images };
+      return { ...this.withoutOwner(product), images };
     } catch (error) {
       this.handleDBExceptions(error);
     }
@@ -81,6 +81,8 @@ export class ProductsService {
     const products = await this.productRepository.find({
       take: limit,
       skip: offset,
+      // El propietario (user) no se expone en las respuestas públicas.
+      loadEagerRelations: false,
       relations: {
         images: true,
       },
@@ -108,7 +110,7 @@ export class ProductsService {
       count: totalProducts,
       pages: Math.ceil(totalProducts / limit),
       products: products.map((product) => ({
-        ...product,
+        ...this.withoutOwner(product),
         images: product.images?.map((img) => img.url),
       })),
     };
@@ -136,7 +138,9 @@ export class ProductsService {
   }
 
   async findOnePlain(term: string) {
-    const { images = [], ...rest } = await this.findOne(term);
+    const { images = [], ...rest } = this.withoutOwner(
+      await this.findOne(term),
+    );
 
     return {
       ...rest,
@@ -187,6 +191,14 @@ export class ProductsService {
     const product = await this.findOne(id);
 
     await this.productRepository.remove(product);
+  }
+
+  /** El propietario del producto (User) nunca forma parte de la respuesta. */
+  private withoutOwner<T extends { user?: User }>(product: T): Omit<T, 'user'> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user, ...publicProduct } = product;
+
+    return publicProduct;
   }
 
   private handleDBExceptions(error: any) {
