@@ -36,6 +36,24 @@ const buildResponse = () => {
 
 describe('TokenService', () => {
   describe('configuración', () => {
+    // ConfigService también lee process.env cuando una clave no está en su
+    // configuración interna: sin aislarlo, estas pruebas fallan si el entorno
+    // (por ejemplo el CI o un shell con el .env cargado) define CSRF_SECRET.
+    let csrfSecretDelEntorno: string | undefined;
+
+    beforeEach(() => {
+      csrfSecretDelEntorno = process.env.CSRF_SECRET;
+      delete process.env.CSRF_SECRET;
+    });
+
+    afterEach(() => {
+      if (csrfSecretDelEntorno === undefined) {
+        delete process.env.CSRF_SECRET;
+      } else {
+        process.env.CSRF_SECRET = csrfSecretDelEntorno;
+      }
+    });
+
     it('falla al arrancar si falta CSRF_SECRET', () => {
       expect(
         () =>
