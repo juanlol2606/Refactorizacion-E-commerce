@@ -12,13 +12,23 @@ import { FilesModule } from './files/files.module';
 import { AuthModule } from './auth/auth.module';
 import { MessageWsModule } from './message-ws/message-ws.module';
 
+// SSL hacia PostgreSQL: DB_SSL manda si está definida ('true' o 'false'); si no,
+// se activa con STAGE=prod (bases gestionadas). El PostgreSQL del compose de
+// producción no trae SSL, por eso allí DB_SSL es 'false'.
+// Es una función para leer process.env después de que ConfigModule cargue el .env.
+function useDbSsl(): boolean {
+  return process.env.DB_SSL
+    ? process.env.DB_SSL === 'true'
+    : process.env.STAGE == 'prod';
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
-      ssl: process.env.STAGE == 'prod',
+      ssl: useDbSsl(),
       extra: {
-        ssl: process.env.STAGE == 'prod' ? { rejectUnauthorized: false } : null,
+        ssl: useDbSsl() ? { rejectUnauthorized: false } : null,
       },
       type: 'postgres',
       host: process.env.DB_HOST,
