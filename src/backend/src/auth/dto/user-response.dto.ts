@@ -4,7 +4,7 @@ import { Expose, plainToInstance } from 'class-transformer';
 import { User } from '../entities/user.entity';
 
 /**
- * Representación PÚBLICA de un usuario (ADR-001).
+ * Representación PÚBLICA de un usuario (ADR-002).
  *
  * Funciona como lista blanca: solo las propiedades marcadas con @Expose()
  * salen en las respuestas. Si en el futuro se agrega una columna sensible a

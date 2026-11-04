@@ -5,13 +5,18 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { MessageWsService } from './message-ws.service';
 import { Server, Socket } from 'socket.io';
-import { NewMessageDto } from './dtos/new-message.dto';
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from '../auth/interfaces';
 
-@WebSocketGateway({ cors: true })
+import { TokenService } from '../auth/services/token.service';
+import { NewMessageDto } from './dtos/new-message.dto';
+import { MessageWsService } from './message-ws.service';
+
+/**
+ * El path (/api/socket.io) y el CORS con credenciales los fija CookieIoAdapter
+ * al arrancar la aplicación. La sesión se autentica con la cookie httpOnly
+ * `access_token` que el navegador envía en el handshake (ADR-004).
+ */
+@WebSocketGateway()
 export class MessageWsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -19,15 +24,21 @@ export class MessageWsGateway
 
   constructor(
     private readonly messageWsService: MessageWsService,
-    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
   ) {}
 
   async handleConnection(client: Socket) {
-    const token = client.handshake.headers.authentication as string;
+    const token = this.tokenService.getAccessTokenFromCookieHeader(
+      client.handshake.headers.cookie,
+    );
 
-    let payload: JwtPayload;
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+
     try {
-      payload = this.jwtService.verify(token);
+      const payload = this.tokenService.verifyAccessToken(token);
       await this.messageWsService.registerClient(client, payload.id);
     } catch {
       client.disconnect();

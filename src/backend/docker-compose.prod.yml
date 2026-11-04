@@ -16,9 +16,14 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_USERNAME: ${DB_USERNAME}
+      DB_SSL: ${DB_SSL:-false}
       PORT: ${PORT}
       HOST_API: ${HOST_API}
       JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      CSRF_SECRET: ${CSRF_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      FRONTEND_URL: ${FRONTEND_URL}
 
   db:
     image: postgres:17

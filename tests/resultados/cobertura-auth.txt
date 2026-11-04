@@ -1,40 +1,64 @@
 $ jest --coverage --collectCoverageFrom="auth/**/*.ts" --collectCoverageFrom="!auth/**/*.spec.ts"
-PASS src/auth/guards/user-role.guard.spec.ts (5.238 s)
-PASS src/auth/auth.service.spec.ts (6.977 s)
-PASS src/auth/strategies/jwt.strategy.spec.ts (7.091 s)
-PASS src/auth/auth.integration.spec.ts (7.313 s)
+PASS src/auth/services/token.service.spec.ts (11.86 s)
+PASS src/auth/guards/user-role.guard.spec.ts (12.422 s)
+PASS src/auth/guards/csrf.guard.spec.ts
+PASS src/auth/strategies/jwt.strategy.spec.ts (14.636 s)
+PASS src/message-ws/message-ws.gateway.spec.ts (15.543 s)
+PASS src/products/products.service.spec.ts (15.991 s)
+PASS src/seed/seed.service.spec.ts (16.655 s)
+PASS src/seed/seed.controller.spec.ts (16.767 s)
+[31m[Nest] 7540  - [39m03/11/2026, 10:17:21 p. m. [31m  ERROR[39m [38;5;3m[ExceptionsHandler] [39mForbiddenError: Forbidden
+    at createHttpError [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\send@1.2.1_supports-color@8.1.1\node_modules\[4msend[24m\index.js:861:12[90m)[39m
+    at SendStream.error [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\send@1.2.1_supports-color@8.1.1\node_modules\[4msend[24m\index.js:168:31[90m)[39m
+    at SendStream.pipe [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\send@1.2.1_supports-color@8.1.1\node_modules\[4msend[24m\index.js:433:12[90m)[39m
+    at sendfile [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\express@5.2.1_supports-color@8.1.1\node_modules\[4mexpress[24m\lib\response.js:1014:8[90m)[39m
+    at ServerResponse.sendFile [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\express@5.2.1_supports-color@8.1.1\node_modules\[4mexpress[24m\lib\response.js:411:3[90m)[39m
+    at FilesController.findProductImage [90m(C:\Users\juand\.vscode\anthony\React\src\backend\[39msrc\files\files.controller.ts:46:9[90m)[39m
+    at [90mC:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\@nestjs+core@11.2.3_@nestjs_6a0b68aef3b3410441307b4dcc2e84c8\node_modules\[4m@nestjs\core[24m\router\router-execution-context.js:39:29
+[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at [90mC:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\@nestjs+core@11.2.3_@nestjs_6a0b68aef3b3410441307b4dcc2e84c8\node_modules\[4m@nestjs\core[24m\router\router-execution-context.js:55:62
+    at [90mC:\Users\juand\.vscode\anthony\React\src\backend\[39mnode_modules\[4m.pnpm[24m\@nestjs+core@11.2.3_@nestjs_6a0b68aef3b3410441307b4dcc2e84c8\node_modules\[4m@nestjs\core[24m\router\router-proxy.js:9:17
+PASS src/files/files.controller.spec.ts (17.892 s)
+PASS src/message-ws/message-ws.integration.spec.ts (18.056 s)
+PASS src/auth/auth.service.spec.ts (18.308 s)
+PASS src/auth/auth.integration.spec.ts (19.39 s)
 ------------------------------|---------|----------|---------|---------|-------------------
 File                          | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 ------------------------------|---------|----------|---------|---------|-------------------
-All files                     |   89.67 |    85.71 |   79.41 |   90.38 |                   
- auth                         |   79.03 |      100 |   91.66 |      80 |                   
+All files                     |   92.33 |    87.03 |   86.79 |   92.99 |                   
+ auth                         |   80.72 |       60 |    92.3 |   81.57 |                   
+  auth.constants.ts           |     100 |      100 |     100 |     100 |                   
   auth.controller.ts          |     100 |      100 |     100 |     100 |                   
-  auth.module.ts              |       0 |      100 |       0 |       0 | 1-42              
+  auth.module.ts              |       0 |        0 |       0 |       0 | 1-43              
   auth.service.ts             |     100 |      100 |     100 |     100 |                   
- auth/decorators              |   95.83 |    33.33 |   83.33 |     100 |                   
+ auth/decorators              |   96.29 |    33.33 |   83.33 |     100 |                   
   auth.decorator.ts           |     100 |      100 |     100 |     100 |                   
   get-user.decorator.ts       |   85.71 |    33.33 |     100 |     100 | 14-16             
   index.ts                    |     100 |      100 |   66.66 |     100 |                   
   role-protected.decorator.ts |     100 |      100 |     100 |     100 |                   
- auth/dto                     |   97.05 |      100 |   83.33 |   96.66 |                   
-  auth-response.dto.ts        |   83.33 |      100 |       0 |   83.33 | 11                
+ auth/dto                     |   97.36 |      100 |   85.71 |   96.96 |                   
+  auth-response.dto.ts        |      80 |      100 |       0 |      80 | 10                
   create-user.dto.ts          |     100 |      100 |     100 |     100 |                   
   index.ts                    |     100 |      100 |     100 |     100 |                   
   login-user.dto.ts           |     100 |      100 |     100 |     100 |                   
+  logout-response.dto.ts      |     100 |      100 |     100 |     100 |                   
   user-response.dto.ts        |     100 |      100 |     100 |     100 |                   
  auth/entities                |   78.94 |      100 |       0 |   81.25 |                   
   user.entity.ts              |   78.94 |      100 |       0 |   81.25 | 69,74,79          
  auth/guards                  |     100 |      100 |     100 |     100 |                   
+  csrf.guard.ts               |     100 |      100 |     100 |     100 |                   
   user-role.guard.ts          |     100 |      100 |     100 |     100 |                   
  auth/interfaces              |     100 |      100 |     100 |     100 |                   
   index.ts                    |     100 |      100 |     100 |     100 |                   
   valid-roles.interface.ts    |     100 |      100 |     100 |     100 |                   
+ auth/services                |   98.52 |       90 |     100 |     100 |                   
+  token.service.ts            |   98.52 |       90 |     100 |     100 | 74,82,168         
  auth/strategies              |     100 |      100 |     100 |     100 |                   
   jwt.strategy.ts             |     100 |      100 |     100 |     100 |                   
 ------------------------------|---------|----------|---------|---------|-------------------
 
-Test Suites: 4 passed, 4 total
-Tests:       45 passed, 45 total
+Test Suites: 12 passed, 12 total
+Tests:       165 passed, 165 total
 Snapshots:   0 total
-Time:        13.382 s, estimated 23 s
+Time:        27.025 s
 Ran all test suites.

@@ -1,17 +1,20 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { DEFAULT_JWT_EXPIRES_IN } from './auth.constants';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { User } from './entities/user.entity';
+import { CsrfGuard } from './guards/csrf.guard';
+import { TokenService } from './services/token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-// import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, TokenService, CsrfGuard],
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User]),
@@ -19,24 +22,22 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        // console.log('JWT SECRET', configService.get('JWT_SECRET'));
-        // console.log('JWT Secret', process.env.JWT_SECRET);
-        return {
-          secret: configService.get('JWT_SECRET'),
-          signOptions: {
-            expiresIn: '2h',
-          },
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            DEFAULT_JWT_EXPIRES_IN) as JwtSignOptions['expiresIn'],
+        },
+      }),
     }),
-    // JwtModule.register({
-    //   secret: process.env.JWT_SECRET,
-    //   signOptions: {
-    //     expiresIn: '2h',
-    //   },
-    // }),
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule],
+  exports: [
+    TypeOrmModule,
+    JwtStrategy,
+    PassportModule,
+    JwtModule,
+    TokenService,
+    CsrfGuard,
+  ],
 })
 export class AuthModule {}

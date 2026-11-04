@@ -3,13 +3,13 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
+import { TokenService } from './services/token.service';
 
 const PLAIN_PASSWORD = 'Abc123';
 
@@ -32,17 +32,17 @@ describe('AuthService', () => {
     save: jest.fn(),
     findOne: jest.fn(),
   };
-  const jwtService = { sign: jest.fn() };
+  const tokenService = { signAccessToken: jest.fn() };
 
   beforeEach(async () => {
     jest.resetAllMocks();
-    jwtService.sign.mockReturnValue('signed.jwt.token');
+    tokenService.signAccessToken.mockReturnValue('signed.jwt.token');
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: getRepositoryToken(User), useValue: userRepository },
-        { provide: JwtService, useValue: jwtService },
+        { provide: TokenService, useValue: tokenService },
       ],
     }).compile();
 
@@ -69,15 +69,15 @@ describe('AuthService', () => {
       );
     });
 
-    it('devuelve el usuario público y un JWT firmado con el id', async () => {
+    it('devuelve el usuario público y el JWT firmado con el id (fuera del usuario)', async () => {
       const entity = buildUser();
       userRepository.create.mockReturnValue(entity);
       userRepository.save.mockResolvedValue(entity);
 
       const result = await service.create(dto);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ id: entity.id });
-      expect(result.token).toBe('signed.jwt.token');
+      expect(tokenService.signAccessToken).toHaveBeenCalledWith(entity.id);
+      expect(result.accessToken).toBe('signed.jwt.token');
       expect(result.user).toEqual({
         id: entity.id,
         email: entity.email,
@@ -87,7 +87,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('ADR-001: la respuesta NO contiene password aunque la entidad aún tenga el hash', async () => {
+    it('ADR-002: la respuesta NO contiene password aunque la entidad aún tenga el hash', async () => {
       // La entidad conserva el hash: equivale a "olvidar" un delete manual.
       const entity = buildUser();
       userRepository.create.mockReturnValue(entity);
@@ -102,7 +102,19 @@ describe('AuthService', () => {
       expect(serialized).not.toContain(entity.password!);
     });
 
-    it('ADR-001: una propiedad sensible nueva en la entidad no se expone por defecto', async () => {
+    it('ADR-004: el JWT va aparte (accessToken) y no forma parte del usuario público', async () => {
+      const entity = buildUser();
+      userRepository.create.mockReturnValue(entity);
+      userRepository.save.mockResolvedValue(entity);
+
+      const result = await service.create(dto);
+
+      expect(Object.keys(result).sort()).toEqual(['accessToken', 'user']);
+      expect(JSON.stringify(result.user)).not.toContain('signed.jwt.token');
+      expect(result.user).not.toHaveProperty('token');
+    });
+
+    it('ADR-002: una propiedad sensible nueva en la entidad no se expone por defecto', async () => {
       const entity = buildUser();
       Object.assign(entity, { resetToken: 'secreto-futuro' });
       userRepository.create.mockReturnValue(entity);
@@ -113,7 +125,7 @@ describe('AuthService', () => {
       expect(JSON.stringify(result)).not.toContain('secreto-futuro');
     });
 
-    it('ADR-001: también excluye password cuando la entidad es una instancia real de User', async () => {
+    it('ADR-002: también excluye password cuando la entidad es una instancia real de User', async () => {
       // TypeORM entrega instancias de la clase User, no objetos planos.
       const entity = Object.assign(new User(), buildUser());
       userRepository.create.mockReturnValue(entity);
@@ -157,7 +169,7 @@ describe('AuthService', () => {
   });
 
   describe('login (inicio de sesión)', () => {
-    it('con credenciales válidas devuelve usuario público y JWT', async () => {
+    it('con credenciales válidas devuelve usuario público y JWT (accessToken)', async () => {
       const entity = buildUser();
       userRepository.findOne.mockResolvedValue(entity);
 
@@ -166,12 +178,12 @@ describe('AuthService', () => {
         password: PLAIN_PASSWORD,
       });
 
-      expect(result.token).toBe('signed.jwt.token');
+      expect(result.accessToken).toBe('signed.jwt.token');
       expect(result.user.email).toBe(entity.email);
-      expect(jwtService.sign).toHaveBeenCalledWith({ id: entity.id });
+      expect(tokenService.signAccessToken).toHaveBeenCalledWith(entity.id);
     });
 
-    it('ADR-001: la respuesta de login nunca incluye password ni su hash', async () => {
+    it('ADR-002: la respuesta de login nunca incluye password ni su hash', async () => {
       const entity = buildUser();
       userRepository.findOne.mockResolvedValue(entity);
 
@@ -191,7 +203,37 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'nadie@google.com', password: PLAIN_PASSWORD }),
       ).rejects.toBeInstanceOf(UnauthorizedException);
-      expect(jwtService.sign).not.toHaveBeenCalled();
+      expect(tokenService.signAccessToken).not.toHaveBeenCalled();
+    });
+
+    it('el correo inexistente y la contraseña incorrecta responden con el MISMO mensaje 401', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+      const unknownEmail = (await service
+        .login({ email: 'nadie@google.com', password: PLAIN_PASSWORD })
+        .catch((e: unknown) => e)) as UnauthorizedException;
+
+      userRepository.findOne.mockResolvedValueOnce(buildUser());
+      const wrongPassword = (await service
+        .login({ email: 'test1@google.com', password: 'Incorrecta1' })
+        .catch((e: unknown) => e)) as UnauthorizedException;
+
+      expect(unknownEmail).toBeInstanceOf(UnauthorizedException);
+      expect(wrongPassword).toBeInstanceOf(UnauthorizedException);
+      expect(unknownEmail.message).toBe('Credentials are not valid');
+      expect(wrongPassword.message).toBe(unknownEmail.message);
+      expect(unknownEmail.message).not.toMatch(/email|password/i);
+    });
+
+    it('con correo inexistente también ejecuta bcrypt (el tiempo no delata si existe)', async () => {
+      const compare = jest.spyOn(bcrypt, 'compareSync');
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.login({ email: 'nadie@google.com', password: PLAIN_PASSWORD }),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+
+      expect(compare).toHaveBeenCalledTimes(1);
+      compare.mockRestore();
     });
 
     it('con contraseña incorrecta responde 401 y no firma ningún token', async () => {
@@ -200,18 +242,18 @@ describe('AuthService', () => {
       await expect(
         service.login({ email: 'test1@google.com', password: 'Incorrecta1' }),
       ).rejects.toBeInstanceOf(UnauthorizedException);
-      expect(jwtService.sign).not.toHaveBeenCalled();
+      expect(tokenService.signAccessToken).not.toHaveBeenCalled();
     });
   });
 
   describe('checkAuthStatus (renovación del token)', () => {
-    it('re-emite un JWT y devuelve el usuario público', () => {
+    it('re-emite el JWT y devuelve el usuario público', () => {
       const entity = buildUser({ roles: ['admin'] });
 
       const result = service.checkAuthStatus(entity);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({ id: entity.id });
-      expect(result.token).toBe('signed.jwt.token');
+      expect(tokenService.signAccessToken).toHaveBeenCalledWith(entity.id);
+      expect(result.accessToken).toBe('signed.jwt.token');
       expect(result.user.roles).toEqual(['admin']);
       expect(JSON.stringify(result)).not.toContain(entity.password!);
     });

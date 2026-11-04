@@ -5,7 +5,7 @@ A modern e-commerce frontend application built with React 19, TypeScript, and Vi
 ## Features
 
 - **Public Shop**: Browse products, filter by category/gender.
-- **Authentication**: Login and Register functionality with persistent sessions (Zustand).
+- **Authentication**: Login, Register and Logout. The session lives in an `httpOnly` cookie set by the API (with a CSRF token); the Zustand store keeps only the user and the auth status, never the token.
 - **Admin Dashboard**: Manage products, view analytics, and track activity.
 - **Modern UI**: Built with Tailwind CSS v4 and Shadcn UI components.
 - **Data Fetching**: Server state management and caching with TanStack Query.
@@ -15,12 +15,9 @@ A modern e-commerce frontend application built with React 19, TypeScript, and Vi
 
 ## Backend
 
-This frontend consumes the generic eShop backend API.
+This frontend consumes the NestJS API that lives in the same repository, in [`../backend`](../backend/README.md).
 
-**IMPORTANT:** The backend repository is located here:
-[https://github.com/4n-ch4n/eShop-nest-backend](https://github.com/4n-ch4n/eShop-nest-backend)
-
-Please follow the instructions in the backend repository to set up and run the API server before starting this frontend application.
+Start the API first (PostgreSQL, `.env` with `CSRF_SECRET`, `pnpm run start:dev`); the steps are in the [root README](../../README.md). The API must allow this app's origin through `FRONTEND_URL` (default `http://localhost:5173`) because requests are sent with credentials (`withCredentials`) and mutating requests carry the `X-CSRF-Token` header.
 
 ## Tech Stack
 
@@ -75,7 +72,7 @@ src/
 │   └── pages/      # Dashboard, Product editor, Products list
 ├── api/            # Axios API client configuration
 ├── auth/           # Authentication module
-│   ├── actions/    # Auth actions (login, register, check-auth)
+│   ├── actions/    # Auth actions (login, register, check-auth, logout)
 │   ├── interfaces/ # Auth response types
 │   ├── layouts/    # Auth layout wrapper
 │   ├── pages/      # Login, Register pages

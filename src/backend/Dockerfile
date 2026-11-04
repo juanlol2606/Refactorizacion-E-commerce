@@ -27,8 +27,11 @@ RUN pnpm install --prod --frozen-lockfile
 FROM node:24-alpine AS prod
 EXPOSE 3000
 WORKDIR /app
+ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+# Las imágenes del seed y las subidas se sirven desde /app/static/products
+COPY static ./static
 
 CMD [ "node","dist/main.js"]
