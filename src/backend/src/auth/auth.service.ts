@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   /**
-   * Único punto donde se arma la sesión (ADR-001 y ADR-004). La exclusión de
+   * Único punto donde se arma la sesión (ADR-002 y ADR-004). La exclusión de
    * campos sensibles (p. ej. `password`) es declarativa: la define
    * UserResponseDto mediante @Expose(). El JWT no va en la respuesta: el
    * controlador lo entrega en una cookie httpOnly.

@@ -87,7 +87,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('ADR-001: la respuesta NO contiene password aunque la entidad aún tenga el hash', async () => {
+    it('ADR-002: la respuesta NO contiene password aunque la entidad aún tenga el hash', async () => {
       // La entidad conserva el hash: equivale a "olvidar" un delete manual.
       const entity = buildUser();
       userRepository.create.mockReturnValue(entity);
@@ -114,7 +114,7 @@ describe('AuthService', () => {
       expect(result.user).not.toHaveProperty('token');
     });
 
-    it('ADR-001: una propiedad sensible nueva en la entidad no se expone por defecto', async () => {
+    it('ADR-002: una propiedad sensible nueva en la entidad no se expone por defecto', async () => {
       const entity = buildUser();
       Object.assign(entity, { resetToken: 'secreto-futuro' });
       userRepository.create.mockReturnValue(entity);
@@ -125,7 +125,7 @@ describe('AuthService', () => {
       expect(JSON.stringify(result)).not.toContain('secreto-futuro');
     });
 
-    it('ADR-001: también excluye password cuando la entidad es una instancia real de User', async () => {
+    it('ADR-002: también excluye password cuando la entidad es una instancia real de User', async () => {
       // TypeORM entrega instancias de la clase User, no objetos planos.
       const entity = Object.assign(new User(), buildUser());
       userRepository.create.mockReturnValue(entity);
@@ -183,7 +183,7 @@ describe('AuthService', () => {
       expect(tokenService.signAccessToken).toHaveBeenCalledWith(entity.id);
     });
 
-    it('ADR-001: la respuesta de login nunca incluye password ni su hash', async () => {
+    it('ADR-002: la respuesta de login nunca incluye password ni su hash', async () => {
       const entity = buildUser();
       userRepository.findOne.mockResolvedValue(entity);
 
