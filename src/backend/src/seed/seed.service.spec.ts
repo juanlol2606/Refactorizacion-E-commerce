@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { User } from '../auth/entities/user.entity';
+import { ValidRoles } from '../auth/interfaces';
 import { ProductsService } from '../products/products.service';
 import { initialData } from './data/seed-data';
 import { SeedService } from './seed.service';
@@ -72,6 +73,17 @@ describe('SeedService', () => {
     expect(userRepository.save).toHaveBeenCalledWith(initialData.users);
     expect(productsService.create).toHaveBeenCalledTimes(
       initialData.products.length,
+    );
+  });
+
+  it('todos los roles de la semilla son roles válidos (no existe el rol "super")', () => {
+    const valid = Object.values(ValidRoles) as string[];
+
+    for (const seedUser of initialData.users) {
+      for (const role of seedUser.roles) expect(valid).toContain(role);
+    }
+    expect(initialData.users.some((u) => u.roles.includes('super-user'))).toBe(
+      true,
     );
   });
 
