@@ -1,3 +1,5 @@
+> **Documento de la Semana 13 — desactualizado.** Es la tabla de componentes y responsabilidades entregada en la Semana 13 y describe el diseño *planeado* (por eso está redactada en futuro: "Nuevo", "No existe"). No refleja el estado final del código. La arquitectura vigente está en [Descripción final](Descripcion%20final.pdf). Se conserva como evidencia de esa entrega.
+
 ## 1. Backend (NestJS)
 
 | Componente | Responsabilidad | Dependencias | Archivo / paquete actual | Estado | Cambio con las actualizaciones |

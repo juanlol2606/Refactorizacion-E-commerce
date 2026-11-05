@@ -76,4 +76,4 @@ Las pruebas están junto al código (`*.spec.ts`) y el e2e en `src/backend/test/
 | ADR-003 | Retiro de las rutas de prueba `private`, `private2` y `private3` y del decorador `@RawHeaders` | Implementada | `auth.controller.ts`, `decorators/` |
 | ADR-004 | JWT en cookie `httpOnly` con protección CSRF | Implementada | `services/token.service.ts`, `guards/csrf.guard.ts`, `strategies/jwt.strategy.ts`, `auth.controller.ts` (`logout`), `app.setup.ts` y el cliente `eShopApi.ts` del Frontend |
 
-Limitaciones conocidas: el JWT es sin estado (no se puede revocar antes de que expire) y `POST /api/products` solo exige sesión, no rol `admin`. Más detalle en el [README raíz](../README.md) y en [`docs/arquitectura.md`](../docs/arquitectura.md).
+Limitaciones conocidas: el JWT es sin estado (no se puede revocar antes de que expire) y `POST /api/products` solo exige sesión, no rol `admin`. Más detalle en el [README raíz](../README.md) y en [`docs/arquitectura.md` (Semana 13, desactualizado)](../docs/arquitectura.md).
