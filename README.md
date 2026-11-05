@@ -9,7 +9,7 @@ Plataforma de comercio electrónico: **Backend** en NestJS, TypeORM y PostgreSQL
 - **Backend:** registro, inicio de sesión, renovación y cierre de sesión. La sesión es un JWT en una cookie `httpOnly`; las peticiones que modifican estado llevan un token CSRF. Autorización por roles (`admin`, `super-user`, `user`). Código en [`src/backend/src/auth`](src/backend/src/auth).
 - **Frontend:** páginas de acceso y registro, estado de sesión con Zustand y rutas protegidas. El navegador nunca ve el JWT (no hay `localStorage`). Código en [`src/frontend/src/auth`](src/frontend/src/auth).
 
-La estructura de capas del módulo y el estado de cada decisión están en [`src/README.md`](src/README.md). La arquitectura completa está en **[`docs/arquitectura.md`](docs/arquitectura.md)**, los diagramas C4 en [`docs/diagramas/`](docs/diagramas/README.md) y las decisiones en [`docs/adr/`](docs/adr/).
+La estructura de capas del módulo y el estado de cada decisión están en [`src/README.md`](src/README.md). La arquitectura actual del sistema es la descrita en **[docs/Descripcion final.pdf](docs/Descripcion%20final.pdf)** (descripción del sistema y del módulo MVP, vista lógica, diagramas C4, despliegue y refactorización realizada). [`docs/arquitectura.md`](docs/arquitectura.md) y los [diagramas C4](docs/diagramas/README.md) corresponden a la Semana 13 (diseño objetivo) y están desactualizados; se conservan como historial. Las decisiones están en [`docs/adr/`](docs/adr/).
 
 ## Problemas arquitectónicos identificados (Semana 3)
 
@@ -232,7 +232,7 @@ El detalle por capas está en [`src/README.md`](src/README.md) y el de las prueb
 
 | Carpeta | Contenido |
 |---|---|
-| [`docs/`](docs/) | Arquitectura ([`arquitectura.md`](docs/arquitectura.md)), decisiones ([`adr/`](docs/adr/)) y diagramas C4 ([`diagramas/`](docs/diagramas/README.md)) |
+| [`docs/`](docs/) | Descripción final de la arquitectura ([`Descripcion final.pdf`](docs/Descripcion%20final.pdf)), decisiones ([`adr/`](docs/adr/)) y, como historial de la Semana 13 (desactualizados), [`arquitectura.md`](docs/arquitectura.md) y los diagramas C4 ([`diagramas/`](docs/diagramas/README.md)) |
 | [`src/backend/`](src/backend/README.md) | API NestJS (TypeORM, PostgreSQL, Swagger, WebSocket) |
 | [`src/frontend/`](src/frontend/README.md) | SPA React (Vite, Tailwind, Zustand, TanStack Query) |
 | [`src/`](src/README.md) | Índice de la refactorización: capas del módulo Auth y decisiones implementadas |

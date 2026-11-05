@@ -1,3 +1,5 @@
+> **Diagramas de la Semana 13 — desactualizados.** Muestran el diseño *objetivo* planeado en esa semana, no el sistema final. La arquitectura y los diagramas vigentes están en [Descripción final](../Descripcion%20final.pdf). Estos archivos (fuentes y exportados) se conservan como evidencia de la Semana 13.
+
 # Diagramas C4 – Versión 1 (estado objetivo del módulo Auth / MVP)
 
 Los diagramas muestran cómo quedará el sistema **después** de la refactorización.
